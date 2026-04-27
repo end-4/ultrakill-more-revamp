@@ -1,0 +1,10 @@
+{
+    "name": "MoreRevamp",
+    "author": "end_4",
+    "version_number": "1.0.0",
+    "website_url": "https://github.com/end-4/ultrakill-more-revamp",
+    "description": "Makes more buttons follow the post-revamp style, most notably PluginConfigurator and Configgy",
+    "dependencies": [
+        "BepInEx-BepInExPack-5.4.2100"
+    ]
+}
