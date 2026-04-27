@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 namespace MoreRevamp {
-    [BepInPlugin("com.github.end-4.moreRevamp", "MoreRevamp", "1.0.0")]
+    [BepInPlugin("com.github.end-4.moreRevamp", "MoreRevamp", "1.0.1")]
     public class Plugin : BaseUnityPlugin {
         internal static ManualLogSource Log;
         public static Sprite? SourceSprite;
@@ -48,6 +48,7 @@ namespace MoreRevamp {
                 obj = obj.transform.parent.gameObject;
                 path = obj.name + "/" + path;
             }
+            string lName = __instance.name.ToLower();
 
             // Check if this image should be styled
             // Avoid vanilla buttons
@@ -60,7 +61,8 @@ namespace MoreRevamp {
             ) return;
             // Blacklist
             if (
-                __instance.name == "UpvoteButton" || __instance.name == "Downvote button" // Angry vote arrows
+                lName.Contains("upvote") || lName.Contains("downvote") // Angry vote arrows
+                || lName.Contains("thumbnail") // Angry level thumbnails
             ) return;
             // Whitelist
             if ((__instance.name == "Border" && path.Contains("ConfigurationMenu(Clone)")) // Configgy overlay

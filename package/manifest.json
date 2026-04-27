@@ -1,7 +1,7 @@
 {
     "name": "MoreRevamp",
     "author": "end_4",
-    "version_number": "1.0.0",
+    "version_number": "1.0.1",
     "website_url": "https://github.com/end-4/ultrakill-more-revamp",
     "description": "Makes more buttons follow the post-revamp style in PluginConfigurator, Configgy, and Thanks for playing screen",
     "dependencies": [
