@@ -143,8 +143,11 @@ namespace MoreRevamp {
             bool isPluginConfDropdownSelectionItemBg =
                 path.Contains("Viewport") && __instance.name == "Item Background";
             bool isPluginConfDropdownSelectionBg =
-                path.Contains("DropdownField(Clone)/Dropdown/") && !lName.Contains("checkmark");
-            bool isPluginConfDropdownArrow = path.Contains("DropdownField") && __instance.name == "Arrow";
+                (path.Contains("DropdownField(Clone)/Dropdown/") || path.Contains("Dropdown/Dropdown")) &&
+                !lName.Contains("checkmark");
+            bool isPluginConfDropdownArrow =
+                (path.Contains("DropdownField") || path.Contains("GamemodeDropdown") ||
+                 path.Contains("DifficultyDropdown")) && __instance.name == "Arrow";
             bool isPluginConfCheckbox = inGenericPluginConfLocations && path.Contains("Toggle") &&
                                         __instance.name == "Background";
             bool isPluginConfCheckmark = inGenericPluginConfLocations && path.Contains("Toggle/Background") &&
