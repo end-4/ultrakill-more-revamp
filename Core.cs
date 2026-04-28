@@ -1,16 +1,43 @@
-﻿using BepInEx;
+﻿using System.Linq;
+using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.AddressableAssets;
 
 namespace MoreRevamp {
-    [BepInPlugin("com.github.end-4.moreRevamp", "MoreRevamp", "1.0.1")]
+    [BepInPlugin("com.github.end-4.moreRevamp", "MoreRevamp", "1.0.2")]
     public class Plugin : BaseUnityPlugin {
         internal static ManualLogSource Log;
-        public static Sprite? SourceSprite;
-        public static float SourcePPU;
-        public static string SOURCE_BUTTON_NAME = "Border";
+
+        private static Sprite _largeBorderSprite = Addressables
+            .LoadAssetAsync<Sprite>("Assets/Textures/UI/Controls/Round_BorderLarge.png").WaitForCompletion();
+
+        private static Sprite _smallBorderSprite = Addressables
+            .LoadAssetAsync<Sprite>("Assets/Textures/UI/Controls/Round_BorderSmall.png").WaitForCompletion();
+
+        private static Sprite _smallFillSprite = Addressables
+            .LoadAssetAsync<Sprite>("Assets/Textures/UI/Controls/Round_FillSmall.png").WaitForCompletion();
+
+        private static Sprite _crossSprite = Addressables
+            .LoadAssetAsync<Sprite>("Assets/Textures/UI/Controls/Check.png").WaitForCompletion();
+
+        private static Sprite _dropdownBorderSprite = Addressables
+            .LoadAssetAsync<Sprite>("Assets/Textures/UI/Controls/Round_DropdownPanel.png").WaitForCompletion();
+
+        private static readonly float PixelsPerUnitMultiplier = 5.4f;
+
+        public static string GetObjectPath(GameObject g) {
+            string path = g.name;
+            while (g.transform.parent != null) {
+                g = g.transform.parent.gameObject;
+                path = g.name + "/" + path;
+            }
+
+            return path;
+        }
 
         private void Awake() {
             Log = Logger;
@@ -22,14 +49,69 @@ namespace MoreRevamp {
             Log.LogInfo("Patches applied");
         }
 
-        // Search for source sprite
-        private void Update() {
-            if (SourceSprite != null) return;
-            Image? source = GameObject.Find(SOURCE_BUTTON_NAME)?.GetComponent<Image>();
-            
-            if (source == null || source.sprite == null) return;
-            SourceSprite = source.sprite;
-            SourcePPU = source.pixelsPerUnitMultiplier * 7 / 4; // title screen border is thicc
+        private static void ApplyImageSprite(Image image, Sprite sourceSprite) {
+            RectTransform rect = image.rectTransform;
+            Vector2 originalSize = rect.sizeDelta;
+            Color originalColor = image.color;
+
+            image.sprite = sourceSprite;
+            image.type = Image.Type.Sliced;
+            image.pixelsPerUnitMultiplier = PixelsPerUnitMultiplier;
+
+            rect.sizeDelta = originalSize;
+            image.color = originalColor;
+        }
+
+        public static void ApplyLargeBorder(Image image) {
+            ApplyImageSprite(image, _largeBorderSprite);
+        }
+
+        public static void ApplySmallBorder(Image image) {
+            ApplyImageSprite(image, _smallBorderSprite);
+        }
+
+        public static void ApplySmallFill(Image image) {
+            ApplyImageSprite(image, _smallFillSprite);
+        }
+
+        public static void ApplyDropdownBorder(Image image) {
+            ApplyImageSprite(image, _dropdownBorderSprite);
+        }
+
+        public static void ApplyCross(Image image) {
+            ApplyImageSprite(image, _crossSprite);
+        }
+
+        public static void ForceUIColor(Image image) {
+            image.color = Color.white;
+        }
+
+        public static void ChangeSize(Image image, float width, float height) {
+            image.rectTransform.sizeDelta = new Vector2(width, height);
+        }
+
+        public static void ChangeAnchor(Image image, float x, float y) {
+            image.rectTransform.anchoredPosition = new Vector2(x, y);
+        }
+
+        public static void ApplyUIComponentColors(Selectable d) {
+            ColorBlock colors = d.colors;
+            colors.normalColor = new Color32(255, 255, 255, 255);
+            colors.selectedColor = new Color32(130, 130, 130, 255);
+            colors.pressedColor = new Color32(255, 0, 0, 255);
+            d.colors = colors;
+        }
+
+        public static void ForceRGBAmount(Image image, float amount, float hasColorThreshold = 0) {
+            float r = image.color.r > hasColorThreshold ? amount : 0;
+            float g = image.color.g > hasColorThreshold ? amount : 0;
+            float b = image.color.b > hasColorThreshold ? amount : 0;
+            float a = image.color.a;
+            image.color = new Color(r, g, b, a);
+        }
+
+        public static void HideImage(Image image) {
+            image.color = Color.clear;
         }
     }
 
@@ -37,20 +119,51 @@ namespace MoreRevamp {
     public static class ImagePatch {
         [HarmonyPostfix]
         public static void Postfix(Image __instance) {
-            // If we haven't found the source sprite yet, skip
-            if (Plugin.SourceSprite == null) return;
-
-
             // Get game object path
-            GameObject obj = __instance.gameObject;
-            string path = obj.name;
-            while (obj.transform.parent != null) {
-                obj = obj.transform.parent.gameObject;
-                path = obj.name + "/" + path;
-            }
+            string path = Plugin.GetObjectPath(__instance.gameObject);
             string lName = __instance.name.ToLower();
 
-            // Check if this image should be styled
+            // Some conditions
+            bool isButton = __instance.GetComponent<Button>() != null;
+            bool isTmpDropdown = __instance.GetComponent<TMP_Dropdown>() != null;
+            bool isDropdown = __instance.GetComponent<Dropdown>() != null;
+            bool isInput = __instance.GetComponent<TMP_InputField>() != null;
+
+            bool inVanillaThankScreenButton = path.Contains("Skippables");
+            bool inGenericPluginConfLocations = path.Contains("ConcretePanel(Clone)") ||
+                                                path.Contains("PresetPanel(Clone)") ||
+                                                path.Contains("PluginConfigField");
+
+            bool isConfiggyBorder = __instance.name == "Border" && path.Contains("ConfigurationMenu(Clone)");
+            bool isPluginConfPresetButton = __instance.name == "PresetButton(Clone)";
+            bool isPluginConfTextField = inGenericPluginConfLocations && __instance.name == "InputField";
+            bool isPluginConfTmpDropdownBg = __instance.name == "Dropdown";
+            bool isPluginConfDropdownBg = __instance.name == "DifficultyDropdown" ||
+                                          __instance.name == "GamemodeDropdown";
+            bool isPluginConfDropdownSelectionItemBg =
+                path.Contains("Viewport") && __instance.name == "Item Background";
+            bool isPluginConfDropdownSelectionBg =
+                path.Contains("DropdownField(Clone)/Dropdown/") && !lName.Contains("checkmark");
+            bool isPluginConfDropdownArrow = path.Contains("DropdownField") && __instance.name == "Arrow";
+            bool isPluginConfCheckbox = inGenericPluginConfLocations && path.Contains("Toggle") &&
+                                        __instance.name == "Background";
+            bool isPluginConfCheckmark = inGenericPluginConfLocations && path.Contains("Toggle/Background") &&
+                                         __instance.name == "Checkmark";
+            bool isPluginConfColor = inGenericPluginConfLocations && path.Contains("ColorField(Clone)") &&
+                                     __instance.name == "Image";
+            bool isPluginConfColorSliderBg = inGenericPluginConfLocations && path.Contains("ColorField(Clone)") &&
+                                             path.Contains("Button/Slider") &&
+                                             __instance.name == "Background";
+            bool isPluginConfColorSliderFill = inGenericPluginConfLocations && path.Contains("ColorField(Clone)") &&
+                                               path.Contains("Slider/Fill Area") &&
+                                               __instance.name == "Fill";
+            bool isPluginConfColorSliderHandle =
+                inGenericPluginConfLocations && path.Contains("ColorField(Clone)") &&
+                path.Contains("Slider/Handle Slide Area") &&
+                __instance.name == "Handle";
+            bool isAngryVoteArrow = lName.Contains("upvote") || lName.Contains("downvote");
+            bool isAngryThumbnail = lName.Contains("thumbnail");
+
             // Avoid vanilla buttons
             if (__instance.GetComponent<HudOpenEffect>() != null &&
                 !( // ...with Special EXceptions
@@ -58,35 +171,69 @@ namespace MoreRevamp {
                             path.Contains("Skippables") // In thank you for playing screen
                         )
                     )
-            ) return;
+               ) return;
+
             // Blacklist
-            if (
-                lName.Contains("upvote") || lName.Contains("downvote") // Angry vote arrows
-                || lName.Contains("thumbnail") // Angry level thumbnails
-            ) return;
-            // Whitelist
-            if ((__instance.name == "Border" && path.Contains("ConfigurationMenu(Clone)")) // Configgy overlay
-                || __instance.GetComponent<Button>() != null && ( // These buttons
-                    path.Contains("ConcretePanel(Clone)") // PluginConfigurator
-                    || path.Contains("PresetPanel(Clone)") // PluginConfigurator
-                    || path.Contains("PluginConfigField") // PluginConfigurator
-                    || path.Contains("Skippables") // PluginConfigurator
-                )
+            if (isAngryVoteArrow || isAngryThumbnail) return;
+
+            // Sprite image applications
+            if (isConfiggyBorder
+                || (isButton && (inGenericPluginConfLocations || inVanillaThankScreenButton ||
+                                 isPluginConfPresetButton))
+                || (isTmpDropdown && isPluginConfTmpDropdownBg)
+                || (isDropdown && isPluginConfDropdownBg)
+                || (isInput && isPluginConfTextField)
                 || ( // General objects
-                    __instance.name == "RankIcon(Clone)" // Angry rank
+                    isPluginConfColorSliderBg
+                    || __instance.name == "RankIcon(Clone)" // Angry rank
                     || __instance.name == "SearchBar(Clone)" // Angry search
                 )
-            ) {
-                // Apply style while preserving size & color
-                RectTransform rect = __instance.rectTransform;
-                Vector2 originalSize = rect.sizeDelta;
-                Color originalColor = __instance.color;
+               ) {
+                Plugin.ApplyLargeBorder(__instance);
+            } else if (isPluginConfDropdownArrow || isPluginConfCheckbox) {
+                Plugin.ApplySmallBorder(__instance);
+            } else if (isPluginConfCheckmark) {
+                Plugin.ApplyCross(__instance);
+            } else if (isPluginConfColor || isPluginConfColorSliderFill || isPluginConfColorSliderHandle) {
+                Plugin.ApplySmallFill(__instance);
+            } else if (isPluginConfDropdownSelectionBg) {
+                Plugin.ApplyDropdownBorder(__instance);
+            }
 
-                __instance.sprite = Plugin.SourceSprite;
-                __instance.pixelsPerUnitMultiplier = Plugin.SourcePPU;
+            // Force colors
+            if (isPluginConfTmpDropdownBg || isPluginConfDropdownBg || isPluginConfDropdownArrow ||
+                isPluginConfCheckbox || isPluginConfCheckmark ||
+                isPluginConfTextField || isPluginConfDropdownSelectionBg) {
+                Plugin.ForceUIColor(__instance);
+            }
 
-                rect.sizeDelta = originalSize;
-                __instance.color = originalColor;
+            // slider bg 0.67 handle 1 fill 0.33
+            // Component-specifics
+            if (isPluginConfCheckbox) {
+                Plugin.ChangeSize(__instance, -10, -10);
+            } else if (isPluginConfCheckmark) {
+                Plugin.ChangeSize(__instance, -10, -10);
+            } else if (isPluginConfTmpDropdownBg || (isInput && isPluginConfTextField) || isDropdown) {
+                Selectable sel = __instance.GetComponent<Selectable>();
+                Plugin.ApplyUIComponentColors(sel);
+            } else if (isPluginConfDropdownArrow) {
+                Plugin.ChangeSize(__instance, 11, 20);
+                Plugin.ChangeAnchor(__instance, -10, 0);
+            } else if (isPluginConfColorSliderBg) {
+                Plugin.ChangeSize(__instance, 0, 10);
+                Plugin.ForceRGBAmount(__instance, 0.67f, 0.27f);
+            } else if (isPluginConfColorSliderFill) {
+                Plugin.ChangeAnchor(__instance, 5, 0);
+                Plugin.ForceRGBAmount(__instance, 0.33f, 0.27f);
+            } else if (isPluginConfColorSliderHandle) {
+                Plugin.ChangeSize(__instance, 10, -10);
+                Plugin.ForceRGBAmount(__instance, 1f, 0.27f);
+            } else if (isPluginConfDropdownSelectionBg) {
+                RectTransform r = __instance.rectTransform;
+                r.pivot = new Vector2(0, 1);
+                r.sizeDelta = new Vector2(-7, 148);
+            } else if (isPluginConfDropdownSelectionItemBg) {
+                Plugin.HideImage(__instance);
             }
         }
     }

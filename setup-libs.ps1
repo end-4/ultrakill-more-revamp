@@ -35,6 +35,8 @@ $ukDlls = @(
     "UnityEngine.UI.dll"
     "UnityEngine.InputLegacyModule.dll"
     "UnityEngine.ImageConversionModule.dll"
+    "Unity.Addressables.dll"
+    "Unity.ResourceManager.dll"
 )
 
 foreach ($dll in $ukDlls) {

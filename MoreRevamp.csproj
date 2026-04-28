@@ -15,6 +15,12 @@
       <Reference Include="BepInEx">
         <HintPath>libs\Managed\BepInEx.dll</HintPath>
       </Reference>
+      <Reference Include="Unity.Addressables">
+        <HintPath>libs\Managed\Unity.Addressables.dll</HintPath>
+      </Reference>
+      <Reference Include="Unity.ResourceManager">
+        <HintPath>libs\Managed\Unity.ResourceManager.dll</HintPath>
+      </Reference>
       <Reference Include="Unity.TextMeshPro">
         <HintPath>libs\Managed\Unity.TextMeshPro.dll</HintPath>
       </Reference>
