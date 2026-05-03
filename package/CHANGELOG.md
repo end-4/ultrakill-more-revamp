@@ -1,5 +1,12 @@
 # MoreRevamp
 
+## 1.0.3
+
+- Update for Angry level loader 4.0
+  - Bundle sort buttons now use revamped style
+  - Fixed the very tall star button
+- Fixed Angry leaderboard dropdown being totally white
+
 ## 1.0.2
 
 - More revamp-ized UI

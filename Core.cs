@@ -8,7 +8,7 @@ using UnityEngine.UI;
 using UnityEngine.AddressableAssets;
 
 namespace MoreRevamp {
-    [BepInPlugin("com.github.end-4.moreRevamp", "MoreRevamp", "1.0.2")]
+    [BepInPlugin("com.github.end-4.moreRevamp", "MoreRevamp", "1.0.3")]
     public class Plugin : BaseUnityPlugin {
         internal static ManualLogSource Log;
 
@@ -133,17 +133,18 @@ namespace MoreRevamp {
             bool inGenericPluginConfLocations = path.Contains("ConcretePanel(Clone)") ||
                                                 path.Contains("PresetPanel(Clone)") ||
                                                 path.Contains("PluginConfigField");
+            bool inAngryLeaderboard = path.Contains("AngryLeaderboardNotification");
 
-            bool isConfiggyBorder = __instance.name == "Border" && path.Contains("ConfigurationMenu(Clone)");
+            bool isConfiggyBorder = __instance.name == "Border" && (path.Contains("ConfigurationMenu(Clone)") || path.Contains("UI_Button_Image"));
             bool isPluginConfPresetButton = __instance.name == "PresetButton(Clone)";
             bool isPluginConfTextField = inGenericPluginConfLocations && __instance.name == "InputField";
             bool isPluginConfTmpDropdownBg = __instance.name == "Dropdown";
-            bool isPluginConfDropdownBg = __instance.name == "DifficultyDropdown" ||
+            bool isPluginConfDropdownBg = __instance.name == "Dropdown" || __instance.name == "DifficultyDropdown" ||
                                           __instance.name == "GamemodeDropdown";
             bool isPluginConfDropdownSelectionItemBg =
                 path.Contains("Viewport") && __instance.name == "Item Background";
             bool isPluginConfDropdownSelectionBg =
-                (path.Contains("DropdownField(Clone)/Dropdown/") || path.Contains("Dropdown/Dropdown")) &&
+                (path.Contains("DropdownField(Clone)/Dropdown/") || path.Contains("Dropdown/Dropdown") ||  __instance.name == "Dropdown List") &&
                 !lName.Contains("checkmark");
             bool isPluginConfDropdownArrow =
                 (path.Contains("DropdownField") || path.Contains("GamemodeDropdown") ||
@@ -166,6 +167,9 @@ namespace MoreRevamp {
                 __instance.name == "Handle";
             bool isAngryVoteArrow = lName.Contains("upvote") || lName.Contains("downvote");
             bool isAngryThumbnail = lName.Contains("thumbnail");
+            bool isAngryFav = __instance.name.StartsWith("FavButton");
+            bool isAngryBundleSortBorder = (lName.StartsWith("button") || lName.StartsWith("frame")) && path.Contains("BundleSortField");
+            bool isAngryBundleSortBg = lName.StartsWith("bg") && path.Contains("BundleSortField");
 
             // Avoid vanilla buttons
             if (__instance.GetComponent<HudOpenEffect>() != null &&
@@ -177,12 +181,12 @@ namespace MoreRevamp {
                ) return;
 
             // Blacklist
-            if (isAngryVoteArrow || isAngryThumbnail) return;
+            if (isAngryVoteArrow || isAngryThumbnail || isAngryFav) return;
 
             // Sprite image applications
             if (isConfiggyBorder
-                || (isButton && (inGenericPluginConfLocations || inVanillaThankScreenButton ||
-                                 isPluginConfPresetButton))
+                || (isButton && (inGenericPluginConfLocations || inVanillaThankScreenButton
+                                || inAngryLeaderboard || isPluginConfPresetButton))
                 || (isTmpDropdown && isPluginConfTmpDropdownBg)
                 || (isDropdown && isPluginConfDropdownBg)
                 || (isInput && isPluginConfTextField)
@@ -190,6 +194,7 @@ namespace MoreRevamp {
                     isPluginConfColorSliderBg
                     || __instance.name == "RankIcon(Clone)" // Angry rank
                     || __instance.name == "SearchBar(Clone)" // Angry search
+                    || isAngryBundleSortBorder
                 )
                ) {
                 Plugin.ApplyLargeBorder(__instance);
@@ -197,7 +202,9 @@ namespace MoreRevamp {
                 Plugin.ApplySmallBorder(__instance);
             } else if (isPluginConfCheckmark) {
                 Plugin.ApplyCross(__instance);
-            } else if (isPluginConfColor || isPluginConfColorSliderFill || isPluginConfColorSliderHandle) {
+            } else if (isPluginConfColor || isPluginConfColorSliderFill
+                || isPluginConfColorSliderHandle || isAngryBundleSortBg
+               ) {
                 Plugin.ApplySmallFill(__instance);
             } else if (isPluginConfDropdownSelectionBg) {
                 Plugin.ApplyDropdownBorder(__instance);
@@ -237,6 +244,8 @@ namespace MoreRevamp {
                 r.sizeDelta = new Vector2(-7, 148);
             } else if (isPluginConfDropdownSelectionItemBg) {
                 Plugin.HideImage(__instance);
+            } else if (isAngryBundleSortBg) {
+                Plugin.ChangeSize(__instance, -4, -4);
             }
         }
     }
