@@ -18,6 +18,9 @@ namespace MoreRevamp {
         private static Sprite _smallBorderSprite = Addressables
             .LoadAssetAsync<Sprite>("Assets/Textures/UI/Controls/Round_BorderSmall.png").WaitForCompletion();
 
+        private static Sprite _largeFillSprite = Addressables
+            .LoadAssetAsync<Sprite>("Assets/Textures/UI/Controls/Round_FillLarge.png").WaitForCompletion();
+
         private static Sprite _smallFillSprite = Addressables
             .LoadAssetAsync<Sprite>("Assets/Textures/UI/Controls/Round_FillSmall.png").WaitForCompletion();
 
@@ -68,6 +71,10 @@ namespace MoreRevamp {
 
         public static void ApplySmallBorder(Image image) {
             ApplyImageSprite(image, _smallBorderSprite);
+        }
+
+        public static void ApplyLargeFill(Image image) {
+            ApplyImageSprite(image, _largeFillSprite);
         }
 
         public static void ApplySmallFill(Image image) {
@@ -136,6 +143,7 @@ namespace MoreRevamp {
             bool inAngryLeaderboard = path.Contains("AngryLeaderboardNotification");
 
             bool isConfiggyBorder = __instance.name == "Border" && (path.Contains("ConfigurationMenu(Clone)") || path.Contains("UI_Button_Image"));
+            bool isPluginConfFieldBox = __instance.mainTexture.name == "UISprite";
             bool isPluginConfPresetButton = __instance.name == "PresetButton(Clone)";
             bool isPluginConfTextField = inGenericPluginConfLocations && __instance.name == "InputField";
             bool isPluginConfTmpDropdownBg = __instance.name == "Dropdown";
@@ -144,7 +152,7 @@ namespace MoreRevamp {
             bool isPluginConfDropdownSelectionItemBg =
                 path.Contains("Viewport") && __instance.name == "Item Background";
             bool isPluginConfDropdownSelectionBg =
-                (path.Contains("DropdownField(Clone)/Dropdown/") || path.Contains("Dropdown/Dropdown") ||  __instance.name == "Dropdown List") &&
+                (path.Contains("DropdownField(Clone)/Dropdown/") || path.Contains("Dropdown/Dropdown") || __instance.name == "Dropdown List") &&
                 !lName.Contains("checkmark");
             bool isPluginConfDropdownArrow =
                 (path.Contains("DropdownField") || path.Contains("GamemodeDropdown") ||
@@ -170,6 +178,8 @@ namespace MoreRevamp {
             bool isAngryFav = __instance.name.StartsWith("FavButton");
             bool isAngryBundleSortBorder = (lName.StartsWith("button") || lName.StartsWith("frame")) && path.Contains("BundleSortField");
             bool isAngryBundleSortBg = lName.StartsWith("bg") && path.Contains("BundleSortField");
+            bool isAngrySearchBar = __instance.name == "SearchBar(Clone)";
+            bool isAngryRankBox = __instance.name == "RankIcon(Clone)";
 
             // Avoid vanilla buttons
             if (__instance.GetComponent<HudOpenEffect>() != null &&
@@ -191,10 +201,8 @@ namespace MoreRevamp {
                 || (isDropdown && isPluginConfDropdownBg)
                 || (isInput && isPluginConfTextField)
                 || ( // General objects
-                    isPluginConfColorSliderBg
-                    || __instance.name == "RankIcon(Clone)" // Angry rank
-                    || __instance.name == "SearchBar(Clone)" // Angry search
-                    || isAngryBundleSortBorder
+                    isPluginConfColorSliderBg || isAngrySearchBar
+                    || isAngryRankBox || isAngryBundleSortBorder
                 )
                ) {
                 Plugin.ApplyLargeBorder(__instance);
@@ -202,6 +210,8 @@ namespace MoreRevamp {
                 Plugin.ApplySmallBorder(__instance);
             } else if (isPluginConfCheckmark) {
                 Plugin.ApplyCross(__instance);
+            } else if (isPluginConfFieldBox) {
+                Plugin.ApplyLargeFill(__instance);
             } else if (isPluginConfColor || isPluginConfColorSliderFill
                 || isPluginConfColorSliderHandle || isAngryBundleSortBg
                ) {
