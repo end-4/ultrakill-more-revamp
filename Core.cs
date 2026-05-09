@@ -8,7 +8,7 @@ using UnityEngine.UI;
 using UnityEngine.AddressableAssets;
 
 namespace MoreRevamp {
-    [BepInPlugin("com.github.end-4.moreRevamp", "MoreRevamp", "1.0.3")]
+    [BepInPlugin("com.github.end-4.moreRevamp", "MoreRevamp", "1.0.4")]
     public class Plugin : BaseUnityPlugin {
         internal static ManualLogSource Log;
 
@@ -135,14 +135,19 @@ namespace MoreRevamp {
             bool isTmpDropdown = __instance.GetComponent<TMP_Dropdown>() != null;
             bool isDropdown = __instance.GetComponent<Dropdown>() != null;
             bool isInput = __instance.GetComponent<TMP_InputField>() != null;
+            bool isOldRoundSprite = (__instance.mainTexture.name == "Background" ||
+                                     __instance.mainTexture.name == "UISprite");
 
-            bool inVanillaThankScreenButton = path.Contains("Skippables");
+            bool inVanillaThankScreen = path.Contains("Skippables");
             bool inGenericPluginConfLocations = path.Contains("ConcretePanel(Clone)") ||
                                                 path.Contains("PresetPanel(Clone)") ||
                                                 path.Contains("PluginConfigField");
             bool inAngryLeaderboard = path.Contains("AngryLeaderboardNotification");
 
-            bool isConfiggyBorder = __instance.name == "Border" && (path.Contains("ConfigurationMenu(Clone)") || path.Contains("UI_Button_Image"));
+            bool isVanillaFinishScreenPanelButton = path.Contains("FinishCanvas") && __instance.mainTexture != null &&
+                                                    isOldRoundSprite;
+            bool isConfiggyBorder = __instance.name == "Border" &&
+                                    (path.Contains("ConfigurationMenu(Clone)") || path.Contains("UI_Button_Image"));
             bool isPluginConfFieldBox = __instance.mainTexture.name == "UISprite";
             bool isPluginConfPresetButton = __instance.name == "PresetButton(Clone)";
             bool isPluginConfTextField = inGenericPluginConfLocations && __instance.name == "InputField";
@@ -152,7 +157,8 @@ namespace MoreRevamp {
             bool isPluginConfDropdownSelectionItemBg =
                 path.Contains("Viewport") && __instance.name == "Item Background";
             bool isPluginConfDropdownSelectionBg =
-                (path.Contains("DropdownField(Clone)/Dropdown/") || path.Contains("Dropdown/Dropdown") || __instance.name == "Dropdown List") &&
+                (path.Contains("DropdownField(Clone)/Dropdown/") || path.Contains("Dropdown/Dropdown") ||
+                 __instance.name == "Dropdown List") &&
                 !lName.Contains("checkmark");
             bool isPluginConfDropdownArrow =
                 (path.Contains("DropdownField") || path.Contains("GamemodeDropdown") ||
@@ -173,36 +179,49 @@ namespace MoreRevamp {
                 inGenericPluginConfLocations && path.Contains("ColorField(Clone)") &&
                 path.Contains("Slider/Handle Slide Area") &&
                 __instance.name == "Handle";
+            bool isPluginConfGeneralSliderBg = inGenericPluginConfLocations && path.Contains("Slider") &&
+                                               __instance.name == "Background";
+            bool isPluginConfGeneralSliderFill = inGenericPluginConfLocations && path.Contains("Slider/Fill Area") &&
+                                                 __instance.name == "Fill";
+            bool isPluginConfGeneralSliderHandle = inGenericPluginConfLocations && path.Contains("Handle Slide Area") &&
+                                                   __instance.name == "Handle";
             bool isAngryVoteArrow = lName.Contains("upvote") || lName.Contains("downvote");
             bool isAngryThumbnail = lName.Contains("thumbnail");
             bool isAngryFav = __instance.name.StartsWith("FavButton");
-            bool isAngryBundleSortBorder = (lName.StartsWith("button") || lName.StartsWith("frame")) && path.Contains("BundleSortField");
+            bool isAngryBundleSortBorder = (lName.StartsWith("button") || lName.StartsWith("frame")) &&
+                                           path.Contains("BundleSortField");
             bool isAngryBundleSortBg = lName.StartsWith("bg") && path.Contains("BundleSortField");
             bool isAngrySearchBar = __instance.name == "SearchBar(Clone)";
             bool isAngryRankBox = __instance.name == "RankIcon(Clone)";
+
+            bool isUltrastatsDropdown = __instance.name == "Dropdown" && path.Contains("FilterColumnsRoot/FilterLeftColumn");
 
             // Avoid vanilla buttons
             if (__instance.GetComponent<HudOpenEffect>() != null &&
                 !( // ...with Special EXceptions
                         __instance.GetComponent<Button>() != null && ( // These buttons
-                            path.Contains("Skippables") // In thank you for playing screen
+                            inVanillaThankScreen
                         )
+                        || isVanillaFinishScreenPanelButton
                     )
                ) return;
 
-            // Blacklist
-            if (isAngryVoteArrow || isAngryThumbnail || isAngryFav) return;
+            // Avoid some stuff that would look weird if modified
+            if (isAngryVoteArrow || isAngryThumbnail || isAngryFav || isUltrastatsDropdown) return;
 
             // Sprite image applications
             if (isConfiggyBorder
-                || (isButton && (inGenericPluginConfLocations || inVanillaThankScreenButton
-                                || inAngryLeaderboard || isPluginConfPresetButton))
+                || (isButton && (inGenericPluginConfLocations || inVanillaThankScreen
+                                                              || inAngryLeaderboard || isPluginConfPresetButton))
                 || (isTmpDropdown && isPluginConfTmpDropdownBg)
                 || (isDropdown && isPluginConfDropdownBg)
                 || (isInput && isPluginConfTextField)
                 || ( // General objects
-                    isPluginConfColorSliderBg || isAngrySearchBar
-                    || isAngryRankBox || isAngryBundleSortBorder
+                    isPluginConfColorSliderBg
+                    || isAngrySearchBar
+                    || isAngryRankBox
+                    || isAngryBundleSortBorder
+                    || isPluginConfGeneralSliderBg
                 )
                ) {
                 Plugin.ApplyLargeBorder(__instance);
@@ -210,11 +229,20 @@ namespace MoreRevamp {
                 Plugin.ApplySmallBorder(__instance);
             } else if (isPluginConfCheckmark) {
                 Plugin.ApplyCross(__instance);
-            } else if (isPluginConfFieldBox) {
+            } else if (
+                isPluginConfFieldBox
+                || isVanillaFinishScreenPanelButton
+                || isOldRoundSprite
+            ) {
                 Plugin.ApplyLargeFill(__instance);
-            } else if (isPluginConfColor || isPluginConfColorSliderFill
-                || isPluginConfColorSliderHandle || isAngryBundleSortBg
-               ) {
+            } else if (
+                isPluginConfColor
+                || isPluginConfColorSliderFill
+                || isPluginConfColorSliderHandle
+                || isPluginConfGeneralSliderHandle
+                || isAngryBundleSortBg
+                || isPluginConfGeneralSliderFill
+            ) {
                 Plugin.ApplySmallFill(__instance);
             } else if (isPluginConfDropdownSelectionBg) {
                 Plugin.ApplyDropdownBorder(__instance);
@@ -239,13 +267,13 @@ namespace MoreRevamp {
             } else if (isPluginConfDropdownArrow) {
                 Plugin.ChangeSize(__instance, 11, 20);
                 Plugin.ChangeAnchor(__instance, -10, 0);
-            } else if (isPluginConfColorSliderBg) {
+            } else if (isPluginConfColorSliderBg || isPluginConfGeneralSliderBg) {
                 Plugin.ChangeSize(__instance, 0, 10);
                 Plugin.ForceRGBAmount(__instance, 0.67f, 0.27f);
-            } else if (isPluginConfColorSliderFill) {
+            } else if (isPluginConfColorSliderFill || isPluginConfGeneralSliderFill) {
                 Plugin.ChangeAnchor(__instance, 5, 0);
                 Plugin.ForceRGBAmount(__instance, 0.33f, 0.27f);
-            } else if (isPluginConfColorSliderHandle) {
+            } else if (isPluginConfColorSliderHandle || isPluginConfGeneralSliderHandle) {
                 Plugin.ChangeSize(__instance, 10, -10);
                 Plugin.ForceRGBAmount(__instance, 1f, 0.27f);
             } else if (isPluginConfDropdownSelectionBg) {

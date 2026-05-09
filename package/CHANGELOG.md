@@ -1,5 +1,11 @@
 # MoreRevamp
 
+## 1.0.4
+
+- Replaced the old rounded shapes in result screen
+- Updated Angry FloatSliderFields
+- Fix ULTRASTATS filter dropdowns being whitewashed
+
 ## 1.0.3
 
 - Update for Angry level loader 4.0
