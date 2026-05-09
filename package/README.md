@@ -1,8 +1,8 @@
 # MoreRevamp
 
-Makes (some, not all) buttons in the following places follow post-revamp style:
+Revamps the UI of these:
 - PluginConfigurator
 - Configgy
-- "Thanks for playing next layer is in development" screen
+- Rank screen, Thanks for playing screen
 
 <img alt="image" src="https://github.com/user-attachments/assets/a3a8932d-a813-4c4f-8d72-f9c1cf8a3a15" />
